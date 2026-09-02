@@ -14,6 +14,12 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import Session, select
 from starlette.responses import FileResponse
 
+try:
+    import cloudinary
+    import cloudinary.uploader
+except ImportError:
+    cloudinary = None
+
 from models import Item, ItemCreate, ItemRead, ItemUpdate
 from database import (
     compute_actual_expire_date, compute_status,
@@ -139,12 +145,21 @@ def get_config():
 
 
 async def save_uploaded_image(file: UploadFile, prefix: str = "image") -> str:
+    content = await file.read()
+    if cloudinary and os.getenv("CLOUDINARY_URL"):
+        result = cloudinary.uploader.upload(
+            content,
+            folder="shelf-life",
+            public_id=f"{prefix}_{os.urandom(8).hex()}",
+            resource_type="image",
+        )
+        return result["secure_url"]
+
     images_dir = os.path.join(STATIC_DIR, "images")
     os.makedirs(images_dir, exist_ok=True)
     ext = os.path.splitext(file.filename or "")[1] or ".jpg"
     filename = f"{prefix}_{os.urandom(4).hex()}{ext}"
     filepath = os.path.join(images_dir, filename)
-    content = await file.read()
     with open(filepath, "wb") as f:
         f.write(content)
     return f"/static/images/{filename}"
@@ -220,15 +235,23 @@ def _normalize_recognized_value(data: dict) -> dict:
 @app.post("/api/recognize")
 async def recognize_item_image(image: UploadFile = File(...)):
     content = await image.read()
-    images_dir = os.path.join(STATIC_DIR, "images")
-    os.makedirs(images_dir, exist_ok=True)
-    ext = os.path.splitext(image.filename or "")[1] or ".jpg"
-    filename = f"photo_{os.urandom(4).hex()}{ext}"
-    filepath = os.path.join(images_dir, filename)
-    with open(filepath, "wb") as f:
-        f.write(content)
-
-    image_url = f"/static/images/{filename}"
+    if cloudinary and os.getenv("CLOUDINARY_URL"):
+        upload_result = cloudinary.uploader.upload(
+            content,
+            folder="shelf-life",
+            public_id=f"photo_{os.urandom(8).hex()}",
+            resource_type="image",
+        )
+        image_url = upload_result["secure_url"]
+    else:
+        images_dir = os.path.join(STATIC_DIR, "images")
+        os.makedirs(images_dir, exist_ok=True)
+        ext = os.path.splitext(image.filename or "")[1] or ".jpg"
+        filename = f"photo_{os.urandom(4).hex()}{ext}"
+        filepath = os.path.join(images_dir, filename)
+        with open(filepath, "wb") as f:
+            f.write(content)
+        image_url = f"/static/images/{filename}"
     mime_type = image.content_type or mimetypes.guess_type(filename)[0] or "image/jpeg"
     data_url = f"data:{mime_type};base64,{base64.b64encode(content).decode('ascii')}"
     prompt = (
