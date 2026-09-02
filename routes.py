@@ -64,6 +64,23 @@ async def root():
     return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 
+@app.get("/manifest.webmanifest")
+async def manifest():
+    return FileResponse(
+        os.path.join(STATIC_DIR, "manifest.webmanifest"),
+        media_type="application/manifest+json",
+    )
+
+
+@app.get("/sw.js")
+async def service_worker():
+    return FileResponse(
+        os.path.join(STATIC_DIR, "sw.js"),
+        media_type="application/javascript",
+        headers={"Service-Worker-Allowed": "/"},
+    )
+
+
 @app.get("/api/items", response_model=List[ItemRead])
 def list_items(
     category: Optional[str] = None,
