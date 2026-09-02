@@ -3,7 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>保质期管理 v2</title>
+  <title>保质期管理</title>
+  <meta name="theme-color" content="#10b981" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="保质期管理" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/static/app-icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/static/app-icon.svg" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -322,7 +330,7 @@
     </div>
   </transition>
   <transition name="fade">
-    <div v-if="toast.show" class="fixed left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-lg text-sm font-bold shadow-lg whitespace-nowrap" style="top:32vh;" :class="toast.type==='success'?'bg-emerald-500 text-white':toast.type==='error'?'bg-rose-500 text-white':'bg-gray-800 text-white'">{{ toast.message }}</div>
+    <div v-if="toast.show" class="fixed z-[60] px-5 py-3 rounded-lg text-sm font-bold shadow-lg whitespace-nowrap" style="top:32vh;left:50%;transform:translateX(-50%);" :class="toast.type==='success'?'bg-emerald-500 text-white':toast.type==='error'?'bg-rose-500 text-white':'bg-gray-800 text-white'">{{ toast.message }}</div>
   </transition>
 </div>
 <template id="card-item-template">
@@ -775,6 +783,11 @@ const app = createApp({
 });
 app.component('card-item', CardItem);
 app.mount('#app');
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
