@@ -1,0 +1,19 @@
+{
+  "name": "保质期与家庭库存管理",
+  "short_name": "保质期管理",
+  "description": "家庭物品保质期与库存管理",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
