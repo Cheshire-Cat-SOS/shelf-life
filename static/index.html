@@ -248,7 +248,7 @@
       <div class="text-base font-semibold">暂无物品</div>
       <div class="text-sm mt-1">点击「手动添加」或「拍照入库」开始</div>
     </div>
-    <div v-for="item in items" :key="item.id" class="mb-3"><card-item :item="item" :categories="categories" :locations="locations" @update="onItemUpdate" @delete="onDelete" /></div>
+    <div v-for="item in items" :key="item.id" class="mb-3"><card-item :item="item" :categories="categories" :locations="locations" :units="units" @update="onItemUpdate" @delete="onDelete" /></div>
   </div>
   <transition name="fade">
     <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40" @click.self="showAddModal=false">
@@ -341,7 +341,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
             <span style="font-weight:900;font-size:18px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;">{{ item.name }}</span>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-              <span style="font-weight:900;font-size:18px;color:#fff;">{{ daysLeftText() }}</span>
+              <span style="font-weight:900;font-size:18px;" :style="{color: statusTextColor}">{{ daysLeftText() }}</span>
               <span style="font-weight:900;font-size:18px;flex-shrink:0;" :style="{color: statusTextColor}">{{ statusLabelFallback(item.status) }}</span>
             </div>
           </div>
@@ -381,35 +381,39 @@
                 当前余量: {{ formatQuantity() }} → 使用后: <strong>{{ calcRemaining() }} {{ editForm.unit }}</strong>
               </div>
             </div>
-            <div style="margin-bottom:12px;">
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+              <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">分类</div>
               <select v-model="editForm.category" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
                 <option v-for="c in categories" :value="c">{{ c }}</option>
               </select>
-            </div>
-            <div style="margin-bottom:12px;">
+              </div>
+            <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">储存位置</div>
               <select v-model="editForm.storage_location" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
                 <option v-for="l in locations" :value="l">{{ l }}</option>
               </select>
-            </div>
-            <div style="margin-bottom:12px;">
+            </div></div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+              <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">到期日期</div>
               <input v-model="editForm.expire_date" type="date" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
-            </div>
-            <div style="margin-bottom:12px;">
+              </div>
+            <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">生产日期</div>
               <input v-model="editForm.prod_date" type="date" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
+              </div>
             </div>
-              <div style="display:flex;gap:12px;margin-bottom:12px;">
-                <div style="flex:1;">
+              <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:12px;margin-bottom:12px;align-items:end;">
+                <div>
                   <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">当前余量</div>
-                  <div style="display:flex;gap:8px;align-items:center;">
-                    <input v-model.number="editForm.current_quantity" type="number" step="0.1" style="flex:1;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
-                    <select v-model="editForm.unit" style="width:88px;padding:10px 8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
+                    <input v-model.number="editForm.current_quantity" type="number" step="0.1" style="box-sizing:border-box;width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
+                </div>
+                <div>
+                    <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">单位</div>
+                    <select v-model="editForm.unit" style="box-sizing:border-box;width:100%;padding:10px 8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
                       <option v-for="u in units" :value="u">{{ u }}</option>
                     </select>
-                  </div>
                 </div>
               </div>
             <div style="margin-bottom:12px;">
@@ -493,7 +497,7 @@ function itemIcon(item) {
   }[category] || '📦';
 }
 const CardItem = {
-  name: 'CardItem', template: '#card-item-template', props: ['item','categories','locations'], emits: ['update', 'delete'],
+  name: 'CardItem', template: '#card-item-template', props: ['item','categories','locations','units'], emits: ['update', 'delete'],
   setup(props, { emit }) {
     const showActions = ref(false);
     const remainingPercent = ref(0);
@@ -511,6 +515,7 @@ const CardItem = {
     watch(() => props.item.current_quantity, v => { remainingPercent.value = 0; });
     watch(() => props.item.is_opened, v => { localIsOpened.value = !!v; });
     const categories = computed(() => props.categories || []);
+    const units = computed(() => props.units && props.units.length ? props.units : ['g', 'ml', '个', '片', '粒']);
     const locations = computed(() => props.locations || []);
     const statusClass = computed(() => 'card-status-' + ({'正常':'normal','临期':'expiring','过期':'expired','用光':'consumed','NORMAL':'normal','EXPIRING':'expiring','EXPIRED':'expired','CONSUMED':'consumed'}[props.item.status]||'normal'));
     const statusTextClass = computed(() => { const m = { '正常': 'text-white', '临期': 'text-white', '过期': 'text-white', '用光': 'text-gray-800', NORMAL: 'text-white', EXPIRING: 'text-white', EXPIRED: 'text-white', CONSUMED: 'text-gray-800' }; return m[props.item.status] || 'text-white'; });
@@ -611,7 +616,7 @@ const CardItem = {
       emit('delete', props.item.id);
       showActions.value = false;
     }
-    return { showActions, remainingPercent, localIsOpened, remainingPcts, calcRemaining, openedAt, paoDaysInput, editForm, statusClass, statusTextClass, statusColor, statusTextColor, statusLabel, statusLabelFallback, categoryLabel, locationLabel, itemIcon, formatQuantity, formatExpireDate, daysLeftText, openQuickActions, setRemaining, toggleOpened, saveEdit, confirmDelete, categories, locations };
+    return { showActions, remainingPercent, localIsOpened, remainingPcts, calcRemaining, openedAt, paoDaysInput, editForm, statusClass, statusTextClass, statusColor, statusTextColor, statusLabel, statusLabelFallback, categoryLabel, locationLabel, itemIcon, formatQuantity, formatExpireDate, daysLeftText, openQuickActions, setRemaining, toggleOpened, saveEdit, confirmDelete, categories, locations, units };
   }
 };
 const app = createApp({
