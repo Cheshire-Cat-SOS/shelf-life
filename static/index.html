@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>保质期管理 v2</title>
+  <meta name="theme-color" content="#10b981" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="保质期管理" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" href="/static/app-icon.png" type="image/png" />
+  <link rel="apple-touch-icon" href="/static/app-icon.png" />
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -196,6 +204,7 @@
     .slide-up-enter-from,.slide-up-leave-to{transform:translateY(100%)}
     ::-webkit-scrollbar{width:0;height:0}
     .card-min-h{min-height:88px}
+    .inventory-wave{position:absolute;inset:0 auto 0 0;z-index:0;background:rgba(255,255,255,0.3);pointer-events:none;border-radius:20px;}
     input[type=range]{-webkit-appearance:none;height:8px;border-radius:4px;background:#e5e7eb}
     input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#10b981;cursor:pointer}
     input[type=date]{color-scheme:light}
@@ -204,9 +213,9 @@
 <body>
 <div id="app">
   <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-200 px-4 py-4">
-    <div class="max-w-[579px] mx-auto flex justify-around gap-3">
-      <button @click="openPhotoModal" class="flex items-center gap-1.5 px-8 py-4 bg-emerald-500 text-white text-lg font-bold rounded-lg active:bg-emerald-600 transition-colors" style="border:none;box-shadow:none;outline:none;"><span>📷</span>拍照入库</button>
-      <button @click="openAddModal" class="flex items-center gap-1.5 px-8 py-4 bg-amber-500 text-white text-lg font-bold rounded-lg active:bg-amber-600 transition-colors" style="border:none;box-shadow:none;outline:none;"><span>➕</span>手动添加</button>
+    <div class="max-w-[579px] mx-auto flex gap-3">
+      <button @click="openPhotoModal" class="flex-1 flex items-center justify-center gap-1 px-2 py-3 bg-emerald-500 text-white font-bold rounded-lg active:bg-emerald-600 transition-colors" style="border:none;box-shadow:none;outline:none;min-height:50px;white-space:nowrap;font-size:18px;line-height:1;"><span style="font-size:20px;line-height:1;">📷</span>拍照入库</button>
+      <button @click="openAddModal" class="flex-1 flex items-center justify-center gap-1 px-2 py-3 bg-amber-500 text-white font-bold rounded-lg active:bg-amber-600 transition-colors" style="border:none;box-shadow:none;outline:none;min-height:50px;white-space:nowrap;font-size:18px;line-height:1;"><span style="font-size:21px;line-height:1;">➕</span>手动添加</button>
     </div>
   </header>
   <div class="max-w-[579px] mx-auto px-4 pb-3">
@@ -248,7 +257,7 @@
       <div class="text-base font-semibold">暂无物品</div>
       <div class="text-sm mt-1">点击「手动添加」或「拍照入库」开始</div>
     </div>
-    <div v-for="item in items" :key="item.id" class="mb-3"><card-item :item="item" :categories="categories" :locations="locations" @update="onItemUpdate" @delete="onDelete" /></div>
+    <div v-for="item in items" :key="item.id" class="mb-3"><card-item :item="item" :categories="categories" :locations="locations" :units="units" @update="onItemUpdate" @delete="onDelete" /></div>
   </div>
   <transition name="fade">
     <div v-if="showAddModal" class="fixed inset-0 z-50 flex items-end justify-center bg-black/40" @click.self="showAddModal=false">
@@ -274,7 +283,7 @@
                 <div><label class="block text-xs font-semibold text-gray-500 mb-1">生产日期</label><input v-model="form.prod_date" type="date" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-emerald-400" /></div>
                 <div><label class="block text-xs font-semibold text-gray-500 mb-1">保质期天数</label><input v-model.number="form.shelf_life_days" type="number" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-emerald-400" /></div>
               </div>
-              <div><label class="block text-xs font-semibold text-gray-500 mb-1">到期日期 *</label><input v-model="form.expire_date" type="date" required class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-emerald-400" /></div>
+              <div><label class="block text-xs font-semibold text-gray-500 mb-1">到期日期</label><input v-model="form.expire_date" type="date" class="w-full px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-emerald-400" /></div>
               <div>
                 <div class="block text-xs font-semibold text-gray-500 mb-1">状态</div>
                 <div class="grid grid-cols-2 gap-3">
@@ -322,13 +331,14 @@
     </div>
   </transition>
   <transition name="fade">
-    <div v-if="toast.show" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] px-5 py-3 rounded-lg text-sm font-bold shadow-lg" :class="toast.type==='success'?'bg-emerald-500 text-white':toast.type==='error'?'bg-rose-500 text-white':'bg-gray-800 text-white'">{{ toast.message }}</div>
+    <div v-if="toast.show" class="fixed z-[60] px-5 py-3 rounded-lg text-sm font-bold shadow-lg whitespace-nowrap" style="top:32vh;left:50%;transform:translateX(-50%);" :class="toast.type==='success'?'bg-emerald-500 text-white':toast.type==='error'?'bg-rose-500 text-white':'bg-gray-800 text-white'">{{ toast.message }}</div>
   </transition>
 </div>
 <template id="card-item-template">
   <div>
-    <div @click="openQuickActions" :style="{background: statusColor, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer', marginBottom: '12px'}">
-      <div style="display:flex;align-items:stretch;min-height:88px;">
+    <div @click="openQuickActions" :style="{background: statusColor, borderRadius: '20px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', cursor: 'pointer', marginBottom: '12px', position:'relative'}">
+      <div v-if="inventoryPercent() < 100" class="inventory-wave" :style="{width: inventoryPercent() + '%'}"></div>
+      <div style="display:flex;align-items:stretch;min-height:88px;position:relative;z-index:1;">
         <div style="flex-shrink:0;width:22%;display:flex;align-items:center;justify-content:center;padding:12px 4px 12px 18px;">
           <div style="width:100%;aspect-ratio:1/1;border-radius:20px;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;overflow:hidden;">
             <img v-if="item.image_url" :src="item.image_url" style="width:100%;height:100%;object-fit:cover;" />
@@ -341,7 +351,7 @@
           <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
             <span style="font-weight:900;font-size:18px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;">{{ item.name }}</span>
             <div style="display:flex;align-items:center;gap:4px;flex-shrink:0;">
-              <span style="font-weight:900;font-size:18px;color:#fff;">{{ daysLeftText() }}</span>
+              <span style="font-weight:900;font-size:18px;" :style="{color: statusTextColor}">{{ daysLeftText() }}</span>
               <span style="font-weight:900;font-size:18px;flex-shrink:0;" :style="{color: statusTextColor}">{{ statusLabelFallback(item.status) }}</span>
             </div>
           </div>
@@ -380,36 +390,46 @@
               <div style="margin-top:8px;font-size:12px;color:#6b7280;">
                 当前余量: {{ formatQuantity() }} → 使用后: <strong>{{ calcRemaining() }} {{ editForm.unit }}</strong>
               </div>
+              <div style="font-size:13px;font-weight:600;color:#6b7280;margin-top:12px;margin-bottom:6px;">物品名称</div>
+              <input v-model="editForm.name" type="text" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
             </div>
-            <div style="margin-bottom:12px;">
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+              <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">分类</div>
               <select v-model="editForm.category" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
                 <option v-for="c in categories" :value="c">{{ c }}</option>
               </select>
-            </div>
-            <div style="margin-bottom:12px;">
+              </div>
+            <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">储存位置</div>
               <select v-model="editForm.storage_location" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
                 <option v-for="l in locations" :value="l">{{ l }}</option>
               </select>
-            </div>
-            <div style="margin-bottom:12px;">
+            </div></div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:12px;">
+              <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">到期日期</div>
               <input v-model="editForm.expire_date" type="date" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
-            </div>
-            <div style="margin-bottom:12px;">
+              </div>
+            <div>
               <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">生产日期</div>
               <input v-model="editForm.prod_date" type="date" style="width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
+              </div>
             </div>
-              <div style="display:flex;gap:12px;margin-bottom:12px;">
-                <div style="flex:1;">
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:12px;align-items:end;">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">初始总量</div>
+                  <input v-model.number="editForm.initial_quantity" type="number" step="0.1" style="box-sizing:border-box;width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
+                </div>
+                <div>
                   <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">当前余量</div>
-                  <div style="display:flex;gap:8px;align-items:center;">
-                    <input v-model.number="editForm.current_quantity" type="number" step="0.1" style="flex:1;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
-                    <select v-model="editForm.unit" style="width:88px;padding:10px 8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
+                    <input v-model.number="editForm.current_quantity" type="number" step="0.1" style="box-sizing:border-box;width:100%;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;" />
+                </div>
+                <div>
+                    <div style="font-size:13px;font-weight:600;color:#6b7280;margin-bottom:6px;">单位</div>
+                    <select v-model="editForm.unit" style="box-sizing:border-box;width:100%;padding:10px 8px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;font-size:14px;font-weight:500;">
                       <option v-for="u in units" :value="u">{{ u }}</option>
                     </select>
-                  </div>
                 </div>
               </div>
             <div style="margin-bottom:12px;">
@@ -493,7 +513,7 @@ function itemIcon(item) {
   }[category] || '📦';
 }
 const CardItem = {
-  name: 'CardItem', template: '#card-item-template', props: ['item','categories','locations'], emits: ['update', 'delete'],
+  name: 'CardItem', template: '#card-item-template', props: ['item','categories','locations','units'], emits: ['update', 'delete'],
   setup(props, { emit }) {
     const showActions = ref(false);
     const remainingPercent = ref(0);
@@ -501,6 +521,8 @@ const CardItem = {
     const openedAt = ref(props.item.opened_at ? props.item.opened_at.substring(0, 10) : '');
     const paoDaysInput = ref(props.item.pao_days ?? '');
     const editForm = ref({
+      name: props.item.name || '',
+      initial_quantity: props.item.initial_quantity ?? props.item.current_quantity ?? 0,
       category: normalizeCategory(props.item.category),
       storage_location: normalizeLocation(props.item.storage_location),
       prod_date: props.item.prod_date ? props.item.prod_date.substring(0, 10) : '',
@@ -511,6 +533,7 @@ const CardItem = {
     watch(() => props.item.current_quantity, v => { remainingPercent.value = 0; });
     watch(() => props.item.is_opened, v => { localIsOpened.value = !!v; });
     const categories = computed(() => props.categories || []);
+    const units = computed(() => props.units && props.units.length ? props.units : ['g', '斤', 'ml', '个', '瓶', '袋', '盒', '支', '片', '块', '粒']);
     const locations = computed(() => props.locations || []);
     const statusClass = computed(() => 'card-status-' + ({'正常':'normal','临期':'expiring','过期':'expired','用光':'consumed','NORMAL':'normal','EXPIRING':'expiring','EXPIRED':'expired','CONSUMED':'consumed'}[props.item.status]||'normal'));
     const statusTextClass = computed(() => { const m = { '正常': 'text-white', '临期': 'text-white', '过期': 'text-white', '用光': 'text-gray-800', NORMAL: 'text-white', EXPIRING: 'text-white', EXPIRED: 'text-white', CONSUMED: 'text-gray-800' }; return m[props.item.status] || 'text-white'; });
@@ -519,6 +542,13 @@ const CardItem = {
     const statusLabel = computed(() => ({ '正常': '正常', '临期': '临期', '过期': '过期', '用光': '用光', NORMAL: '正常', EXPIRING: '临期', EXPIRED: '过期', CONSUMED: '用光' }[props.item.status] || props.item.status));
     function statusLabelFallback(s) { const m = { NORMAL: '正常', EXPIRING: '临期', EXPIRED: '过期', CONSUMED: '用光' }; return m[s] || s; }
     function formatQuantity() { return (props.item.current_quantity || 0) + ' ' + props.item.unit; }
+    function inventoryPercent() {
+      const initial = Number(props.item.initial_quantity || 0);
+      const current = Number(props.item.current_quantity || 0);
+      if (initial <= 0) return current > 0 ? 100 : 2;
+      if (current <= 0) return 2;
+      return Math.max(0, Math.min(100, Math.round(current / initial * 100)));
+    }
     function formatExpireDate() { if (!props.item.actual_expire_date && !props.item.expire_date) return '--'; const d = props.item.actual_expire_date || props.item.expire_date; const dt = new Date(d); const yy = dt.getFullYear() % 100; const mm = String(dt.getMonth() + 1).padStart(2, '0'); const dd = String(dt.getDate()).padStart(2, '0'); return yy + '-' + mm + '-' + dd; }
     function daysLeftText() {
       const d = props.item.actual_expire_date || props.item.expire_date;
@@ -536,6 +566,8 @@ const CardItem = {
       openedAt.value = props.item.opened_at ? props.item.opened_at.substring(0, 10) : '';
       paoDaysInput.value = props.item.pao_days ?? '';
       editForm.value = {
+        name: props.item.name || '',
+        initial_quantity: props.item.initial_quantity ?? props.item.current_quantity ?? 0,
         category: normalizeCategory(props.item.category),
         storage_location: normalizeLocation(props.item.storage_location),
         prod_date: props.item.prod_date ? props.item.prod_date.substring(0, 10) : '',
@@ -582,6 +614,8 @@ const CardItem = {
     }
     async function saveEdit() {
       const updates = {
+        name: editForm.value.name.trim(),
+        initial_quantity: Number(editForm.value.initial_quantity || 0),
         category: normalizeCategory(editForm.value.category),
         storage_location: normalizeLocation(editForm.value.storage_location),
         prod_date: dateOrNull(editForm.value.prod_date),
@@ -611,7 +645,7 @@ const CardItem = {
       emit('delete', props.item.id);
       showActions.value = false;
     }
-    return { showActions, remainingPercent, localIsOpened, remainingPcts, calcRemaining, openedAt, paoDaysInput, editForm, statusClass, statusTextClass, statusColor, statusTextColor, statusLabel, statusLabelFallback, categoryLabel, locationLabel, itemIcon, formatQuantity, formatExpireDate, daysLeftText, openQuickActions, setRemaining, toggleOpened, saveEdit, confirmDelete, categories, locations };
+    return { showActions, remainingPercent, localIsOpened, remainingPcts, calcRemaining, openedAt, paoDaysInput, editForm, statusClass, statusTextClass, statusColor, statusTextColor, statusLabel, statusLabelFallback, categoryLabel, locationLabel, itemIcon, formatQuantity, inventoryPercent, formatExpireDate, daysLeftText, openQuickActions, setRemaining, toggleOpened, saveEdit, confirmDelete, categories, locations, units };
   }
 };
 const app = createApp({
@@ -619,8 +653,8 @@ const app = createApp({
   setup() {
     const items = ref([]);
     const categories = ref(['生鲜蔬菜','烘焙原料','酒水饮品','药品保健','肉禽水产','调味干货','日化母婴','熟食速冻']);
-    const locations = ref(['冷藏室','冷冻室','厨房铝柜','餐边抽','入户抽','药箱','洗漱柜']);
-    const units = ref(['g','ml','个','片','粒']);
+    const locations = ref(['冷藏室','入户柜','入户柜抽','餐边柜','餐边柜抽','厨房柜','药箱','电箱柜','洗衣机柜','主卧抽屉','浴室柜']);
+    const units = ref(['g','斤','ml','个','瓶','袋','盒','支','片','块','粒']);
     const activeFilter = ref('all');
     const showAddModal = ref(false);
     const showPhotoModal = ref(false);
@@ -633,6 +667,13 @@ const app = createApp({
     const stats = ref({ total: 0, normal: 0, expiring: 0, expired: 0, consumed: 0 });
     const loading = ref(true);
     const form = ref({ name: '', category: '生鲜蔬菜', storage_location: '冷藏室', initial_quantity: 1, current_quantity: 1, unit: 'g', remaining_percent: 100, image_url: null, prod_date: null, shelf_life_days: null, expire_date: '', is_opened: false, opened_at: null, pao_days: null });
+    watch([() => form.value.prod_date, () => form.value.shelf_life_days], () => {
+      if (form.value.prod_date && Number(form.value.shelf_life_days) > 0) {
+        const start = new Date(form.value.prod_date + 'T00:00:00');
+        start.setDate(start.getDate() + Number(form.value.shelf_life_days));
+        form.value.expire_date = start.toISOString().substring(0, 10);
+      }
+    });
     function showToast(message, type = 'success') { toast.value = { show: true, message, type }; setTimeout(() => { toast.value.show = false; }, 2500); }
     function toggleFilter(status) {
       if (activeFilter.value === status) activeFilter.value = 'all';
@@ -644,11 +685,11 @@ const app = createApp({
         const data = await resp.json();
         categories.value = data.categories || [];
         locations.value = data.storage_locations || [];
-        units.value = data.units || [];
+        units.value = data.units && data.units.length ? data.units : ['g','斤','ml','个','瓶','袋','盒','支','片','块','粒'];
       } catch(e) {
         categories.value = ['生鲜蔬菜','烘焙原料','酒水饮品','药品保健','肉禽水产','调味干货','日化母婴','熟食速冻'];
-        locations.value = ['冷藏室','冷冻室','厨房铝柜','餐边抽','入户抽','药箱','洗漱柜'];
-        units.value = ['g','ml','个','片','粒'];
+        locations.value = ['冷藏室','入户柜','入户柜抽','餐边柜','餐边柜抽','厨房柜','药箱','电箱柜','洗衣机柜','主卧抽屉','浴室柜'];
+        units.value = ['g','斤','ml','个','瓶','袋','盒','支','片','块','粒'];
       }
     }
     async function fetchItems() {
@@ -692,7 +733,7 @@ const app = createApp({
     function onPhotoChange(e) { const file = e.target.files[0]; if (file) { photoFile.value = file; const reader = new FileReader(); reader.onload = ev => { photoPreview.value = ev.target.result; }; reader.readAsDataURL(file); } }
     async function submitAdd() {
       if (!form.value.name.trim()) { showToast('请输入物品名称', 'error'); return; }
-      if (!form.value.expire_date) { showToast('请选择到期日期', 'error'); return; }
+      if (!form.value.expire_date && !(form.value.prod_date && form.value.shelf_life_days)) { showToast('请填写到期日期，或填写生产日期和保质期天数', 'error'); return; }
       adding.value = true;
       try {
         const payload = {
@@ -770,6 +811,11 @@ const app = createApp({
 });
 app.component('card-item', CardItem);
 app.mount('#app');
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
