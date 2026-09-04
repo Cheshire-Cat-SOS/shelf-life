@@ -5,22 +5,33 @@ from typing import Optional
 from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy import text
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inventory.db')
-ENGINE_URL = f'sqlite:///{DB_PATH}'
+DATABASE_URL = os.getenv('DATABASE_URL')
+IS_SQLITE = not bool(DATABASE_URL)
 
-engine = create_engine(
-    ENGINE_URL,
-    connect_args={'check_same_thread': False},
-    echo=False,
-)
+if DATABASE_URL:
+    ENGINE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    engine = create_engine(
+        ENGINE_URL,
+        pool_pre_ping=True,
+        echo=False,
+    )
+else:
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inventory.db')
+    ENGINE_URL = f'sqlite:///{DB_PATH}'
+    engine = create_engine(
+        ENGINE_URL,
+        connect_args={'check_same_thread': False},
+        echo=False,
+    )
 
 
 def init_db():
     from models import Item
     SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        session.exec(text('PRAGMA journal_mode=WAL;'))
-        session.commit()
+    if IS_SQLITE:
+        with Session(engine) as session:
+            session.exec(text('PRAGMA journal_mode=WAL;'))
+            session.commit()
 
 
 def get_db():
@@ -34,11 +45,12 @@ CATEGORIES = [
 ]
 
 UNITS = [
-    'g', 'ml', '个', '片', '粒',
+    'g', '斤', 'ml', '个', '瓶', '袋', '盒', '支', '片', '块', '粒',
 ]
 
 STORAGE_LOCATIONS = [
-    '冷藏室', '冷冻室', '厨房铝柜', '餐边抽', '入户抽', '药箱', '洗漱柜',
+    '冷藏室', '入户柜', '入户柜抽', '餐边柜', '餐边柜抽', '厨房柜',
+    '药箱', '电箱柜', '洗衣机柜', '主卧抽屉', '浴室柜',
 ]
 
 CATEGORY_ALIASES = {
