@@ -5,27 +5,22 @@ from typing import Optional
 from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy import text
 
-# 优先读取云端配置的 Neon 数据库地址，本地则回退使用 SQLite
 DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inventory.db')
-DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DB_PATH}")
+ENGINE_URL = f'sqlite:///{DB_PATH}'
 
-# 兼容 Postgres URL 前缀
-if DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
-
-# 根据数据库类型配置连接参数
-connect_args = {"check_same_thread": False} if "sqlite" in DATABASE_URL else {}
-engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args)
+engine = create_engine(
+    ENGINE_URL,
+    connect_args={'check_same_thread': False},
+    echo=False,
+)
 
 
 def init_db():
     from models import Item
     SQLModel.metadata.create_all(engine)
-    # 仅在本地 SQLite 时开启 WAL 模式，避免 PostgreSQL 执行报错
-    if "sqlite" in DATABASE_URL:
-        with Session(engine) as session:
-            session.exec(text('PRAGMA journal_mode=WAL;'))
-            session.commit()
+    with Session(engine) as session:
+        session.exec(text('PRAGMA journal_mode=WAL;'))
+        session.commit()
 
 
 def get_db():
@@ -39,7 +34,7 @@ CATEGORIES = [
 ]
 
 UNITS = [
-    'g', 'ml', '个', '片', '粒',
+    'g', 'ml', '个', '片', '粒', '袋', '斤',
 ]
 
 STORAGE_LOCATIONS = [
