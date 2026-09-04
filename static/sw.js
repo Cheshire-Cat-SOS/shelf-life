@@ -1,8 +1,8 @@
-const CACHE_NAME = 'shelf-life-v1';
+const CACHE_NAME = 'shelf-life-v2';
 const APP_SHELL = [
   '/',
   '/manifest.webmanifest',
-  '/static/app-icon.svg'
+  '/static/app-icon.png'
 ];
 
 self.addEventListener('install', event => {
