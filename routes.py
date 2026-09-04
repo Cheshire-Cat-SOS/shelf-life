@@ -104,6 +104,10 @@ def list_items(
 
 @app.post("/api/items", response_model=ItemRead)
 def create_item(item: ItemCreate, db: Session = Depends(get_db)):
+    if not item.expire_date and item.prod_date and item.shelf_life_days:
+        item.expire_date = item.prod_date + __import__('datetime').timedelta(days=item.shelf_life_days)
+    if not item.expire_date:
+        raise HTTPException(status_code=422, detail="请填写到期日期，或同时填写生产日期和保质期天数")
     db_item = Item.model_validate(item)
     normalize_item_fields(db_item)
     db_item.actual_expire_date = compute_actual_expire_date(db_item)
