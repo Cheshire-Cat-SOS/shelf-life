@@ -1,4 +1,4 @@
-﻿from datetime import date, datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Optional
 
@@ -23,7 +23,7 @@ class ItemBase(SQLModel):
     image_url: Optional[str] = Field(default=None, max_length=2000)
     prod_date: Optional[date] = Field(default=None)
     shelf_life_days: Optional[int] = Field(default=None)
-    expire_date: date = Field(...)
+    expire_date: Optional[date] = Field(default=None)
     is_opened: bool = Field(default=False)
     opened_at: Optional[date] = Field(default=None)
     pao_days: Optional[int] = Field(default=None)
