@@ -34,7 +34,7 @@ CATEGORIES = [
 ]
 
 UNITS = [
-    'g', 'ml', '个', '片', '粒', '袋', '斤',
+    'g', 'ml', '个', '片', '粒',
 ]
 
 STORAGE_LOCATIONS = [
