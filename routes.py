@@ -88,6 +88,7 @@ def list_items(
     location: Optional[str] = None,
     db: Session = Depends(get_db),
 ):
+    refresh_all_statuses(db)
     query = select(Item)
     if category:
         query = query.where(Item.category == category)
@@ -326,6 +327,7 @@ async def recognize_item_image(image: UploadFile = File(...)):
 
 @app.get("/api/stats")
 def get_stats(db: Session = Depends(get_db)):
+    refresh_all_statuses(db)
     items = db.exec(select(Item)).all()
     def _status_text(value):
         text = str(value)
